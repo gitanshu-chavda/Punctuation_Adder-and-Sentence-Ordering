@@ -51,3 +51,43 @@ print("Total labeled words:", len(labelled_data))
 print("Boundary labels:", boundary_count)
 print("NONE labels:", len(labelled_data) - boundary_count)
 print("Saved to:", output_file)
+
+
+with output_file.open("r", encoding="utf-8") as file:
+
+    reader = csv.DictReader(file)
+
+    records = list(reader)
+
+records_by_file = {}
+
+for record in records:
+
+    filename = record["file"]
+    if filename not in records_by_file:
+        records_by_file[filename] = []
+
+    records_by_file[filename].append(record)
+
+print("\n" + "=" * 50)
+print("BOUNDARY LABEL INSPECTION")
+print("=" * 50)
+
+for filename, words in records_by_file.items():
+
+    print("\nFile:", filename)
+
+    for i, record in enumerate(words):
+
+        if record["label"] == "BOUNDARY":
+
+            start = max(0,i-5)
+            end = min(len(words),i + 6)
+
+            context = [
+                item["word"] for item in words[start:end]
+            ]
+
+
+            print("\nContext:", " ".join(context))
+            print("Boundary after:", record["word"])
