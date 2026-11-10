@@ -17,12 +17,25 @@ def normalize_text(text):
 
 text_files = sorted(DATA_FOLDER.glob("*.txt"))
 
+
+OUTPUT_FOLDER = Path("data/processed")
+
+
+OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True) #this will create it if it doesnt exist
+
+
 for file_path in text_files:
+
     text = file_path.read_text(encoding="utf-8")
 
     normalized_text = normalize_text(text)
 
-    print("\nFile:", file_path.name)
-    print("Original characters:", len(text))
-    print("Normalized characters:", len(normalized_text))
-    print("Preview:", normalized_text[:200])
+    
+    output_path = OUTPUT_FOLDER / file_path.name
+
+    output_path.write_text(
+        normalized_text,
+        encoding="utf-8"
+    )
+
+    print("Processed:", file_path.name)
