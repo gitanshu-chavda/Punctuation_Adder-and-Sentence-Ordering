@@ -58,7 +58,7 @@ loss = criterion(
 
 # 8. Display results
 print("Class weights:", class_weights)
-print("Original logits shape:", logits.shape)
+print("Original logi                    ts shape:", logits.shape)
 print("Original labels shape:", labels.shape)
 print("Padding mask:")
 print(mask)
