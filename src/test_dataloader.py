@@ -55,7 +55,6 @@ class PunctuationDataset(Dataset):
 
         record = json.loads(line)
 
-        # Convert lists into PyTorch tensors
         input_ids = torch.tensor(
             record["input_ids"],
             dtype=torch.long
@@ -69,27 +68,24 @@ class PunctuationDataset(Dataset):
         return input_ids, label_ids
 
 
-# 3. Create a function to combine examples into a batch
-def collate_batch(batch):
+
+def collate_batch(batch):         #combining into batch
 
     input_sequences = [item[0] for item in batch]
 
     label_sequences = [item[1] for item in batch]
 
-    # Record the original length of every sequence
     lengths = torch.tensor(
         [len(sequence) for sequence in input_sequences],
         dtype=torch.long
-    )
+    )    #recording the original length
 
-    # Pad input sequences with PAD_ID
     padded_inputs = pad_sequence(
         input_sequences,
         batch_first=True,
         padding_value=PAD_ID
     )
 
-    # Pad labels with IGNORE_INDEX
     padded_labels = pad_sequence(
         label_sequences,
         batch_first=True,
@@ -99,7 +95,6 @@ def collate_batch(batch):
     return padded_inputs, padded_labels, lengths
 
 
-# 4. Load the training and validation datasets
 train_dataset = PunctuationDataset(
     DATA_FOLDER / "train_chunks.jsonl"
 )
@@ -109,7 +104,6 @@ validation_dataset = PunctuationDataset(
 )
 
 
-# 5. Create DataLoaders
 train_loader = DataLoader(
     train_dataset,
     batch_size=BATCH_SIZE,
@@ -127,11 +121,9 @@ validation_loader = DataLoader(
 )
 
 
-# 6. Retrieve one training batch
 input_batch, label_batch, lengths = next(iter(train_loader))
 
 
-# 7. Display batch information
 print("TRAINING DATASET")
 print("Total chunks:", len(train_dataset))
 
