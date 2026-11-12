@@ -10,9 +10,9 @@ A clean NLP pipeline that takes Hindi text with missing punctuation and shuffled
 **No off-the-shelf generative chat LLM is used** (no GPT/Gemini/Claude). The project uses encoder/ONNX and sequence-to-sequence translation models, runs **CPU by default**, and if a **GPU** is used, GPU memory must stay **< 1.5 GB VRAM** end-to-end.
 
 **Repository:** [gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering)  
-**Branch (current):** `sen-ord-1`  
-**Executed demo notebook:** [notebooks/executed_demo.ipynb](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering/blob/sen-ord-1/notebooks/executed_demo.ipynb)  
-**Runnable end-to-end Colab:** [notebooks/colab_end_to_end.ipynb](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering/blob/sen-ord-1/notebooks/colab_end_to_end.ipynb)  
+**Branch:** `main` (development history on `sen-ord-1`)  
+**Executed demo notebook:** [notebooks/executed_demo.ipynb](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering/blob/main/notebooks/executed_demo.ipynb)  
+**Runnable end-to-end Colab:** [notebooks/colab_end_to_end.ipynb](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering/blob/main/notebooks/colab_end_to_end.ipynb)  
 **Google Drive folder (notebooks/artifacts):** [Open in Google Drive](https://drive.google.com/drive/folders/1LjbBl2CQbTBjrl1kEuq2KVE-gG8hByhn?usp=sharing)
 
 ---
@@ -155,7 +155,7 @@ main.py, setup_check.py, requirements*.txt
 
 ## Submission
 
-- **GitHub repository:** [gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering) (branch `sen-ord-1`)
+- **GitHub repository:** [gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering](https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering) (branch `main`)
 - **Google Drive (notebooks/artifacts):** [1LjbBl2CQbTBjrl1kEuq2KVE-gG8hByhn](https://drive.google.com/drive/folders/1LjbBl2CQbTBjrl1kEuq2KVE-gG8hByhn?usp=sharing)
 - **Trained/fine-tuned models:** *None in this submission.* Pretrained/downloaded models and configured backends are used (ONNX punctuation, mBERT, MarianMT/IndicTrans2).
 - **Executed evidence:** See [`notebooks/executed_demo.ipynb`](notebooks/executed_demo.ipynb) and reports/artifacts in `outputs/`, `reports/`, `data/ordered/`, `data/final/`.
