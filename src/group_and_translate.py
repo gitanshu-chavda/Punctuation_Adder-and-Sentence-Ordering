@@ -1,15 +1,17 @@
 """Group ordered sentences into chunks of 5 and translate Hindi -> English.
 
 Reads:  data/ordered/sample-*.ordered.txt
-Writes: data/final/<stem>.groups_hi.txt      (groups of 5 Hindi sentences)
-        data/final/<stem>.groups_en.txt      (translated groups)
-        data/final/<stem>.groups.tsv         (group_id, hindi, english)
+Writes: data/final/<stem>.groups_hi.txt
+        data/final/<stem>.groups_en.txt
+        data/final/<stem>.groups.tsv
         data/final/<stem>.pipeline.json
         data/final/translation_summary.json
 
-Translation model: Helsinki-NLP/opus-mt-hi-en (MarianMT encoder-decoder), run on CPU.
-This is a neural machine translation model (not a GPT/Claude/Gemini-style chat LLM).
-Model is cached locally under models/translation/opus-mt-hi-en when downloaded.
+Translation backends (in priority order):
+1. IndicTrans2 (AI4Bharat) when available/configured (preferred per project update request).
+   - Requires model access and dependencies (e.g. IndicTransToolkit) and may require HF_TOKEN
+     for gated models. Model ID can be set via INDICTRANS2_MODEL_ID.
+2. Fallback: Helsinki-NLP/opus-mt-hi-en (MarianMT), not a GPT/Claude/Gemini chat LLM.
 
 Run from project root:
     python src/group_and_translate.py
@@ -18,6 +20,7 @@ Run from project root:
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -28,11 +31,17 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 ORDERED_FOLDER = Path("data/ordered")
 OUTPUT_FOLDER = Path("data/final")
-MODEL_ID = "Helsinki-NLP/opus-mt-hi-en"
-LOCAL_MODEL_DIR = Path("models/translation/opus-mt-hi-en")
 GROUP_SIZE = 5
 MAX_INPUT_TOKENS = 512
 MAX_NEW_TOKENS = 256
+
+# Preferred (IndicTrans2) - user-requested
+INDIC_DEFAULT_MODEL_ID = os.environ.get("INDICTRANS2_MODEL_ID", "ai4bharat/indictrans2-indic-en-dist-200M")
+INDIC_LOCAL_DIR = Path(os.environ.get("INDICTRANS2_LOCAL_DIR", "models/translation/indictrans2-indic-en"))
+
+# Fallback (MarianMT)
+MARIAN_MODEL_ID = "Helsinki-NLP/opus-mt-hi-en"
+MARIAN_LOCAL_DIR = Path("models/translation/opus-mt-hi-en")
 
 
 def _safe_stdout() -> None:
@@ -43,11 +52,7 @@ def _safe_stdout() -> None:
 
 
 def extract_sentences(text: str) -> list[str]:
-    """Extract ordered sentences from ordered text.
-
-    Ordering scripts write one sentence per line. Prefer line-based splitting to
-    preserve segments that may not end with sentence punctuation.
-    """
+    """Extract ordered sentences (one per line preferred)."""
     lines = [ln.strip() for ln in text.strip().splitlines() if ln.strip()]
     if len(lines) > 1:
         return lines
@@ -59,56 +64,139 @@ def chunked(items: list[str], n: int) -> list[list[str]]:
     return [items[i : i + n] for i in range(0, len(items), n)]
 
 
-def load_translator():
-    """Load translation model/tokenizer from local cache dir if available, else download."""
-    source = str(LOCAL_MODEL_DIR) if LOCAL_MODEL_DIR.exists() else MODEL_ID
-    print(f"Loading translation model from: {source}", flush=True)
-    tokenizer = AutoTokenizer.from_pretrained(source)
-    model = AutoModelForSeq2SeqLM.from_pretrained(source)
-    model.to("cpu")
-    model.eval()
+class BaseTranslator:
+    backend = "base"
+    model_name = ""
 
-    # If loaded from hub, save a local copy for reproducibility/offline reuse
-    if source == MODEL_ID:
-        try:
-            LOCAL_MODEL_DIR.mkdir(parents=True, exist_ok=True)
-            tokenizer.save_pretrained(LOCAL_MODEL_DIR)
-            model.save_pretrained(LOCAL_MODEL_DIR)
-            print(f"Saved local translation model copy to: {LOCAL_MODEL_DIR}")
-        except Exception as e:
-            print(f"Warning: could not save local model copy: {e}")
-
-    return tokenizer, model
+    def translate_texts(self, texts: list[str]) -> list[str]:
+        raise NotImplementedError
 
 
-def translate_texts(tokenizer, model, texts: list[str]) -> list[str]:
-    outputs = []
-    for text in texts:
-        inputs = tokenizer(
-            text,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=MAX_INPUT_TOKENS,
-        )
-        with torch.no_grad():
-            generated = model.generate(
+class MarianTranslator(BaseTranslator):
+    backend = "marian"
+
+    def __init__(self):
+        source = str(MARIAN_LOCAL_DIR) if MARIAN_LOCAL_DIR.exists() else MARIAN_MODEL_ID
+        self.model_name = source
+        print(f"Loading translation model (fallback MarianMT): {source}", flush=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(source)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(source)
+        self.model.to("cpu")
+        self.model.eval()
+        if source == MARIAN_MODEL_ID:
+            try:
+                MARIAN_LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+                self.tokenizer.save_pretrained(MARIAN_LOCAL_DIR)
+                self.model.save_pretrained(MARIAN_LOCAL_DIR)
+                print(f"Saved local MarianMT copy to: {MARIAN_LOCAL_DIR}")
+            except Exception as e:
+                print(f"Warning: could not save local MarianMT copy: {e}")
+
+    @torch.no_grad()
+    def translate_texts(self, texts: list[str]) -> list[str]:
+        outputs = []
+        for text in texts:
+            inputs = self.tokenizer(
+                text,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=MAX_INPUT_TOKENS,
+            )
+            generated = self.model.generate(
                 **inputs,
                 max_new_tokens=MAX_NEW_TOKENS,
                 num_beams=4,
                 early_stopping=True,
             )
-        out = tokenizer.batch_decode(generated, skip_special_tokens=True)
-        outputs.append(out[0].strip() if out else "")
-    return outputs
+            out = self.tokenizer.batch_decode(generated, skip_special_tokens=True)
+            outputs.append(out[0].strip() if out else "")
+        return outputs
 
 
-def process_file(tokenizer, model, ordered_file: Path, output_folder: Path) -> dict:
+class IndicTrans2Translator(BaseTranslator):
+    backend = "indictrans2"
+
+    def __init__(self):
+        # Try to use IndicTransToolkit preprocessing/postprocessing if available (recommended by AI4Bharat).
+        try:
+            from IndicTransToolkit.processor import IndicProcessor  # type: ignore
+        except Exception as e:
+            raise RuntimeError(
+                "IndicTrans2 requested but IndicTransToolkit is not available. "
+                "Install IndicTransToolkit and ensure model access/token if gated."
+            ) from e
+
+        source = str(INDIC_LOCAL_DIR) if INDIC_LOCAL_DIR.exists() else INDIC_DEFAULT_MODEL_ID
+        self.model_name = source
+        print(f"Loading translation model (IndicTrans2): {source}", flush=True)
+        self.ip = IndicProcessor(inference=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(source, trust_remote_code=True)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(source, trust_remote_code=True)
+        self.model.to("cpu")
+        self.model.eval()
+
+        if source == INDIC_DEFAULT_MODEL_ID:
+            try:
+                INDIC_LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+                self.tokenizer.save_pretrained(INDIC_LOCAL_DIR)
+                self.model.save_pretrained(INDIC_LOCAL_DIR)
+                print(f"Saved local IndicTrans2 copy to: {INDIC_LOCAL_DIR}")
+            except Exception as e:
+                print(f"Warning: could not save local IndicTrans2 copy: {e}")
+
+    @torch.no_grad()
+    def translate_texts(self, texts: list[str]) -> list[str]:
+        # IndicTrans2 expects specific language tags and preprocessing; use common hin_Deva -> eng_Latn.
+        src_lang, tgt_lang = "hin_Deva", "eng_Latn"
+        batch = self.ip.preprocess_batch(texts, src_lang=src_lang, tgt_lang=tgt_lang)
+        inputs = self.tokenizer(
+            batch,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=MAX_INPUT_TOKENS,
+        )
+        generated = self.model.generate(
+            **inputs,
+            max_new_tokens=MAX_NEW_TOKENS,
+            num_beams=4,
+            early_stopping=True,
+        )
+        decoded = self.tokenizer.batch_decode(generated, skip_special_tokens=True)
+        outputs = self.ip.postprocess_batch(decoded, lang=tgt_lang)
+        return [o.strip() for o in outputs]
+
+
+def load_translator() -> BaseTranslator:
+    """Prefer IndicTrans2 when possible, else fall back to MarianMT."""
+    prefer = os.environ.get("TRANSLATION_BACKEND", "auto").lower()  # auto|indictrans2|marian
+    errors = []
+
+    if prefer in ("auto", "indictrans2"):
+        try:
+            return IndicTrans2Translator()
+        except Exception as e:
+            errors.append(f"IndicTrans2 unavailable: {e}")
+            if prefer == "indictrans2":
+                raise
+
+    if prefer in ("auto", "marian"):
+        try:
+            return MarianTranslator()
+        except Exception as e:
+            errors.append(f"MarianMT unavailable: {e}")
+            raise
+
+    raise RuntimeError("No translation backend available. " + " | ".join(errors))
+
+
+def process_file(translator: BaseTranslator, ordered_file: Path, output_folder: Path) -> dict:
     text = ordered_file.read_text(encoding="utf-8")
     sentences = extract_sentences(text)
     groups = chunked(sentences, GROUP_SIZE)
     hi_groups = [" ".join(g) for g in groups]
-    en_groups = translate_texts(tokenizer, model, hi_groups)
+    en_groups = translator.translate_texts(hi_groups)
 
     stem = ordered_file.stem.replace(".ordered", "")
     hi_path = output_folder / f"{stem}.groups_hi.txt"
@@ -129,9 +217,9 @@ def process_file(tokenizer, model, ordered_file: Path, output_folder: Path) -> d
 
     tsv_lines = ["group_id\tsentence_count\thindi\tenglish"]
     for i, (hi, en, g) in enumerate(zip(hi_groups, en_groups, groups), 1):
-        hi_clean = hi.replace("\t", " ").replace("\n", " ")
-        en_clean = en.replace("\t", " ").replace("\n", " ")
-        tsv_lines.append(f"{i}\t{len(g)}\t{hi_clean}\t{en_clean}")
+        tsv_lines.append(
+            f"{i}\t{len(g)}\t{hi.replace(chr(9),' ').replace(chr(10),' ')}\t{en.replace(chr(9),' ').replace(chr(10),' ')}"
+        )
     tsv_path.write_text("\n".join(tsv_lines) + "\n", encoding="utf-8")
 
     stats = {
@@ -140,7 +228,8 @@ def process_file(tokenizer, model, ordered_file: Path, output_folder: Path) -> d
         "group_size": GROUP_SIZE,
         "groups": len(groups),
         "group_sentence_counts": [len(g) for g in groups],
-        "translation_model": MODEL_ID,
+        "translation_backend": translator.backend,
+        "translation_model": translator.model_name,
         "outputs": {
             "hindi_groups": str(hi_path),
             "english_groups": str(en_path),
@@ -159,18 +248,19 @@ def main() -> int:
         print(f"No ordered files found in {ORDERED_FOLDER}. Run: python src/order_sentences.py")
         return 1
 
-    tokenizer, model = load_translator()
+    translator = load_translator()
+    print(f"Using translation backend: {translator.backend} ({translator.model_name})", flush=True)
 
     results = []
     for f in ordered_files:
         print(f"\nGrouping & translating {f.name} ...", flush=True)
-        stats = process_file(tokenizer, model, f, OUTPUT_FOLDER)
+        stats = process_file(translator, f, OUTPUT_FOLDER)
         results.append(stats)
         print(f"  sentences={stats['sentences']} groups={stats['groups']} -> {stats['outputs']['english_groups']}")
 
     summary = {
-        "translation_model": MODEL_ID,
-        "local_model_dir": str(LOCAL_MODEL_DIR),
+        "translation_backend": translator.backend,
+        "translation_model": translator.model_name,
         "group_size": GROUP_SIZE,
         "files": results,
     }
