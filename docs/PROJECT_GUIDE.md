@@ -32,11 +32,11 @@ Prepared copies for the model live in `data/model_input/` and must keep all `NUL
 ### 3.2 Punctuation restoration
 - Script: `src/punctuation.py`
 - Model: `Horizon-Labs/punctuation-restoration-small` (token classification, 6 labels)
-- Runtime: **ONNX Runtime on CPU** using `models/punctuation/onnx/model_quantized.onnx`
-- Tokenizer: local files in `models/punctuation/tokenizer/`
+- Runtime: **ONNX Runtime on CPU** using `models/punctuation/onnx/model_quantized.onnx` (local tokenizer in `models/punctuation/tokenizer/`)
 - Labels: `0` (none), `.`, `,`, `?`, `-`, `:`. Predicted `.` is converted to Hindi danda `।`.
 - Long text is handled with chunking (`CHUNK_SIZE=400`, `OVERLAP_SIZE=50`).
 - Outputs: `data/punctuated/sample-*.txt`
+- Tools/libraries: `onnxruntime`, `transformers`, `numpy`, `torch` (present in env). No generative LLMs.
 
 **Known things to review carefully:**
 - The model may insert punctuation around `NULL` (e.g. `NULL:` or `। NULL`). This does not mean `NULL` was removed, but it can change interpretation.
@@ -49,21 +49,22 @@ Prepared copies for the model live in `data/model_input/` and must keep all `NUL
 - Compares raw vs punctuated text around every `NULL` occurrence (by order) to show inserted punctuation/context.
 
 ### 3.4 Sentence ordering (candidate, all samples)
-- Primary script: `src/order_sentences.py`
+- Primary script: `src/order_sentences.py` (current implementation: **multilingual BERT pairwise scoring + Borda aggregation** using `bert-base-multilingual-cased`).
 - Reads `data/punctuated/sample-*.txt` and writes per-sample outputs to `data/ordered/`:
   - `sample-N.ordered.txt` (one sentence per line, candidate order)
   - `sample-N.mapping.tsv` (new position, original position, topic)
   - `sample-N.order_stats.json`
   - `ordering_summary.json`
-- Uses multilingual sentence embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`) with clustering/heuristics to propose an order.
-- **Important:** This is a *candidate* order, not guaranteed original/logical ground truth. Review before downstream use.
+- **Important:** This is a *candidate* order, not guaranteed original/logical ground truth. Existing generated artifacts may come from earlier runs; regenerate and recompute metrics (`scripts/compute_metrics.py`, `reports/evaluation.json`) after code changes. Current reference-alignment metrics (best-effort vs `data/processed/*.sentences.txt`) are reported in README/reports.
+- Tools/libraries: `transformers`, `torch`, `numpy` (CPU). No generative LLMs.
 
 ### 3.5 Grouping and translation (implemented)
 - Script: `src/group_and_translate.py`
-- Reads `data/ordered/sample-*.ordered.txt`, groups every **5 consecutive sentences** (last group may be smaller), and translates each Hindi group to English.
-- Translation model: `Helsinki-NLP/opus-mt-hi-en` (MarianMT neural MT, encoder-decoder seq2seq), run on CPU via `transformers`/PyTorch. This is **not** GPT/Gemini/Claude.
-- On first run the model may be downloaded and cached locally under `models/translation/opus-mt-hi-en` (ignored by git due to `models/*`).
-- Outputs in `data/final/`: `sample-N.groups_hi.txt`, `sample-N.groups_en.txt`, `sample-N.groups.tsv`, `sample-N.pipeline.json`, `translation_summary.json`.
+- Reads `data/ordered/sample-*.ordered.txt`, groups every **5 consecutive sentences** (last group may be smaller), and translates to English.
+- **Preferred backend:** IndicTrans2 (`ai4bharat/indictrans2-indic-en-dist-200M` by default, configurable via env vars) when dependencies/access are available.
+- **Fallback backend (current generated outputs in this environment):** `Helsinki-NLP/opus-mt-hi-en` (MarianMT neural MT, encoder-decoder seq2seq, CPU). Not GPT/Gemini/Claude.
+- Notes: IndicTrans2 may require `HF_TOKEN`/license access and `IndicTransToolkit`; MarianMT may be cached locally (e.g. `models/translation/opus-mt-hi-en`, ignored by git).
+- Outputs in `data/final/`: `sample-N.groups_hi.txt`, `sample-N.groups_en.txt`, `sample-N.groups.tsv`, `sample-N.pipeline.json`, `translation_summary.json`. Aligned outputs also generated in `outputs/` via `scripts/generate_aligned_outputs.py`.
 
 ### 3.6 Verification
 - `scripts/verify_integrity.py` checks literal `NULL` preservation and basic counts across stages.
