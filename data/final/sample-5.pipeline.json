@@ -1,5 +1,5 @@
 {
-  "ordered_input": "data\\ordered\\sample-5.ordered.txt",
+  "ordered_input": "data/ordered/sample-5.ordered.txt",
   "sentences": 52,
   "group_size": 5,
   "groups": 11,
@@ -17,10 +17,10 @@
     2
   ],
   "translation_backend": "marian",
-  "translation_model": "models\\translation\\opus-mt-hi-en",
+  "translation_model": "Helsinki-NLP/opus-mt-hi-en",
   "outputs": {
-    "hindi_groups": "data\\final\\sample-5.groups_hi.txt",
-    "english_groups": "data\\final\\sample-5.groups_en.txt",
-    "tsv": "data\\final\\sample-5.groups.tsv"
+    "hindi_groups": "data/final/sample-5.groups_hi.txt",
+    "english_groups": "data/final/sample-5.groups_en.txt",
+    "tsv": "data/final/sample-5.groups.tsv"
   }
 }

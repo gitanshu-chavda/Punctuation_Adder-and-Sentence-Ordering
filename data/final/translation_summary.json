@@ -1,10 +1,10 @@
 {
   "translation_backend": "marian",
-  "translation_model": "models\\translation\\opus-mt-hi-en",
+  "translation_model": "Helsinki-NLP/opus-mt-hi-en",
   "group_size": 5,
   "files": [
     {
-      "ordered_input": "data\\ordered\\sample-1.ordered.txt",
+      "ordered_input": "data/ordered/sample-1.ordered.txt",
       "sentences": 50,
       "group_size": 5,
       "groups": 10,
@@ -21,15 +21,15 @@
         5
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-1.groups_hi.txt",
-        "english_groups": "data\\final\\sample-1.groups_en.txt",
-        "tsv": "data\\final\\sample-1.groups.tsv"
+        "hindi_groups": "data/final/sample-1.groups_hi.txt",
+        "english_groups": "data/final/sample-1.groups_en.txt",
+        "tsv": "data/final/sample-1.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-2.ordered.txt",
+      "ordered_input": "data/ordered/sample-2.ordered.txt",
       "sentences": 49,
       "group_size": 5,
       "groups": 10,
@@ -46,15 +46,15 @@
         4
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-2.groups_hi.txt",
-        "english_groups": "data\\final\\sample-2.groups_en.txt",
-        "tsv": "data\\final\\sample-2.groups.tsv"
+        "hindi_groups": "data/final/sample-2.groups_hi.txt",
+        "english_groups": "data/final/sample-2.groups_en.txt",
+        "tsv": "data/final/sample-2.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-3.ordered.txt",
+      "ordered_input": "data/ordered/sample-3.ordered.txt",
       "sentences": 47,
       "group_size": 5,
       "groups": 10,
@@ -71,15 +71,15 @@
         2
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-3.groups_hi.txt",
-        "english_groups": "data\\final\\sample-3.groups_en.txt",
-        "tsv": "data\\final\\sample-3.groups.tsv"
+        "hindi_groups": "data/final/sample-3.groups_hi.txt",
+        "english_groups": "data/final/sample-3.groups_en.txt",
+        "tsv": "data/final/sample-3.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-4.ordered.txt",
+      "ordered_input": "data/ordered/sample-4.ordered.txt",
       "sentences": 50,
       "group_size": 5,
       "groups": 10,
@@ -96,15 +96,15 @@
         5
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-4.groups_hi.txt",
-        "english_groups": "data\\final\\sample-4.groups_en.txt",
-        "tsv": "data\\final\\sample-4.groups.tsv"
+        "hindi_groups": "data/final/sample-4.groups_hi.txt",
+        "english_groups": "data/final/sample-4.groups_en.txt",
+        "tsv": "data/final/sample-4.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-5.ordered.txt",
+      "ordered_input": "data/ordered/sample-5.ordered.txt",
       "sentences": 52,
       "group_size": 5,
       "groups": 11,
@@ -122,15 +122,15 @@
         2
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-5.groups_hi.txt",
-        "english_groups": "data\\final\\sample-5.groups_en.txt",
-        "tsv": "data\\final\\sample-5.groups.tsv"
+        "hindi_groups": "data/final/sample-5.groups_hi.txt",
+        "english_groups": "data/final/sample-5.groups_en.txt",
+        "tsv": "data/final/sample-5.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-6.ordered.txt",
+      "ordered_input": "data/ordered/sample-6.ordered.txt",
       "sentences": 48,
       "group_size": 5,
       "groups": 10,
@@ -147,15 +147,15 @@
         3
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-6.groups_hi.txt",
-        "english_groups": "data\\final\\sample-6.groups_en.txt",
-        "tsv": "data\\final\\sample-6.groups.tsv"
+        "hindi_groups": "data/final/sample-6.groups_hi.txt",
+        "english_groups": "data/final/sample-6.groups_en.txt",
+        "tsv": "data/final/sample-6.groups.tsv"
       }
     },
     {
-      "ordered_input": "data\\ordered\\sample-7.ordered.txt",
+      "ordered_input": "data/ordered/sample-7.ordered.txt",
       "sentences": 60,
       "group_size": 5,
       "groups": 12,
@@ -174,11 +174,11 @@
         5
       ],
       "translation_backend": "marian",
-      "translation_model": "models\\translation\\opus-mt-hi-en",
+      "translation_model": "Helsinki-NLP/opus-mt-hi-en",
       "outputs": {
-        "hindi_groups": "data\\final\\sample-7.groups_hi.txt",
-        "english_groups": "data\\final\\sample-7.groups_en.txt",
-        "tsv": "data\\final\\sample-7.groups.tsv"
+        "hindi_groups": "data/final/sample-7.groups_hi.txt",
+        "english_groups": "data/final/sample-7.groups_en.txt",
+        "tsv": "data/final/sample-7.groups.tsv"
       }
     }
   ]
