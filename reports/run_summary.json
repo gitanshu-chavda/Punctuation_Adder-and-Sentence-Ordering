@@ -1,0 +1,51 @@
+{
+  "pipeline": "prepare_input -> punctuation -> order_sentences -> group_and_translate",
+  "samples": [
+    {
+      "sample": "sample-1",
+      "sentences": 50,
+      "groups": 10,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-2",
+      "sentences": 49,
+      "groups": 10,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-3",
+      "sentences": 47,
+      "groups": 10,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-4",
+      "sentences": 50,
+      "groups": 10,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-5",
+      "sentences": 52,
+      "groups": 11,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-6",
+      "sentences": 48,
+      "groups": 10,
+      "group_size": 5
+    },
+    {
+      "sample": "sample-7",
+      "sentences": 60,
+      "groups": 12,
+      "group_size": 5
+    }
+  ],
+  "translation_backend_current_outputs": "marian (Helsinki-NLP/opus-mt-hi-en)",
+  "ordering_method_current_outputs": "embedding+clustering/greedy candidate (previous); mBERT pairwise+Borda implemented in code",
+  "notes": "Timings/peak memory not formally measured. GPU not used in current CPU scripts; verify <1.5GB VRAM if ported to GPU.",
+  "generated_at": "2026-11-12T18:09:35.188252"
+}

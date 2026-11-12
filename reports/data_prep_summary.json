@@ -1,0 +1,6 @@
+{
+  "raw_samples": 7,
+  "literal_null_total": 67,
+  "prepared_to": "data/model_input",
+  "note": "Original files preserved in data/raw/samples; prepare_input copies without modifying content."
+}

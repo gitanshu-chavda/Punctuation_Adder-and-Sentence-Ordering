@@ -4,7 +4,8 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 *.zip
+
+# Large/generated artifacts (keep specific tracked files as-is)
 data/processed/*
 models/*
-outputs/*
 .vscode/
