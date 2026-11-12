@@ -250,14 +250,27 @@ outputs/                friend-style aligned outputs (4 files per sample)
 reports/                evaluation/run/data-prep summaries (JSON)
 scripts/                pipeline utilities and diagnostics
 src/
-  prepare_input.py
-  punctuation.py
-  order_sentences.py
-  group_and_translate.py
+  punctuation/          punctuation restoration task (restore.py)
+  ordering/             sentence ordering task (order.py, mBERT pairwise+Borda)
+  translation/          grouping + translation task (translate.py)
+  prepare_input.py      input preparation (NULL preserved)
+  punctuation.py        compatibility entrypoint -> src/punctuation/restore.py
+  order_sentences.py    compatibility entrypoint -> src/ordering/order.py
+  group_and_translate.py compatibility entrypoint -> src/translation/translate.py
   pipeline.py           unified CLI wrapper
-  sentence-ordering.py  earlier sample-1 script (reference)
+  evaluate.py           evaluation utilities
+  utils.py              shared helpers
 main.py                 entry point wrapper
+setup_check.py          environment/data checks
 ```
+
+## Submission
+
+- **GitHub repository:** https://github.com/gitanshu-chavda/Punctuation_Adder-and-Sentence-Ordering (current work on branch `sen-ord-1`)
+- **Trained/fine-tuned models:** _None in this submission._ The pipeline uses pretrained models (ONNX punctuation model, `bert-base-multilingual-cased`, and MarianMT/IndicTrans2 translation backends as configured).
+- **Google Drive (models/artifacts, public link):** **TODO — add your public Google Drive link here** (required by submission instructions if any models were trained; if none, include a public folder link and keep the “no trained models” statement above).
+
+> Before final submission, ensure the evaluated branch/tag contains the final regenerated artifacts/reports, the translation backend/model used is documented, and any required resource/manual-review evidence is included.
 
 ---
 

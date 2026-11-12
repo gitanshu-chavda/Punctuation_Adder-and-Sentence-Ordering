@@ -1,11 +1,43 @@
-__pycache__/
-*.pyc
+# Virtual envs
 .venv/
+.venv.backup-*/
 venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter
 .ipynb_checkpoints/
+
+# Env
+.env
+
+# Models/artifacts
+models/
+
+# Data
+data/processed/*
+!data/processed/.gitkeep
+
+# Caches
+.pytest_cache/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs/archives
+*.log
 *.zip
 
-# Large/generated artifacts (keep specific tracked files as-is)
-data/processed/*
-models/*
+# IDE
 .vscode/
+
+# Generated docs
+docs/*.pdf
+
+# Misc
+/tmp/
