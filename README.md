@@ -178,6 +178,7 @@ Source: `scripts/compute_metrics.py` compares `data/ordered/*.ordered.txt` to `d
 | [`notebooks/02_null_diagnostic.ipynb`](notebooks/02_null_diagnostic.ipynb) | Inspect all 67 `NULL` marker contexts |
 | [`notebooks/03_sentence_ordering_demo.ipynb`](notebooks/03_sentence_ordering_demo.ipynb) | Sentence ordering walkthrough |
 | [`notebooks/04_full_pipeline.ipynb`](notebooks/04_full_pipeline.ipynb) | Inspect full pipeline outputs (ordering, grouping, translation) |
+| [`notebooks/colab_end_to_end.ipynb`](notebooks/colab_end_to_end.ipynb) | Run the full pipeline in Google Colab (clone, setup, HF token/IndicTrans2, run, metrics, download) |
 
 > Open with the project `venv` kernel in VS Code/Antigravity for best compatibility.
 
@@ -222,7 +223,7 @@ python scripts/profile_resources.py --steps integrity,metrics
   - `INDICTRANS2_MODEL_ID=...`
   - `INDICTRANS2_LOCAL_DIR=...`
 
-If IndicTrans2 is unavailable, the pipeline falls back to MarianMT. (In the current environment, IndicTrans2 execution is blocked by missing token/toolkit access, so generated translations remain MarianMT fallback until configured.)
+If IndicTrans2 is unavailable, the pipeline falls back to MarianMT. In the current local Windows environment, IndicTrans2 execution was blocked by gated model access/401 and `IndicTransToolkit` build requirements (MSVC tools); **running in Colab is recommended** (see `notebooks/colab_end_to_end.ipynb` and `scripts/colab_setup.sh`).
 
 ---
 
