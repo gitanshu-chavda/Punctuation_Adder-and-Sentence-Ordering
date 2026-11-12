@@ -178,8 +178,8 @@ Source: `scripts/compute_metrics.py` compares `data/ordered/*.ordered.txt` to `d
 | [`notebooks/02_null_diagnostic.ipynb`](notebooks/02_null_diagnostic.ipynb) | Inspect all 67 `NULL` marker contexts |
 | [`notebooks/03_sentence_ordering_demo.ipynb`](notebooks/03_sentence_ordering_demo.ipynb) | Sentence ordering walkthrough |
 | [`notebooks/04_full_pipeline.ipynb`](notebooks/04_full_pipeline.ipynb) | Inspect full pipeline outputs (ordering, grouping, translation) |
-| [`notebooks/executed_demo.ipynb`](notebooks/executed_demo.ipynb) | **Executed demo** with embedded outputs from current artifacts (punctuation, ordering, grouping/translation, aligned outputs, metrics) |
-| [`notebooks/colab_end_to_end.ipynb`](notebooks/colab_end_to_end.ipynb) | Run the full pipeline in Google Colab (clone, setup, HF token/IndicTrans2, run, metrics, download) |
+| [`notebooks/executed_demo.ipynb`](notebooks/executed_demo.ipynb) | **Executed demo** (full Colab end-to-end run with saved outputs) |
+| [`notebooks/colab_end_to_end.ipynb`](notebooks/colab_end_to_end.ipynb) | Runnable end-to-end Colab notebook template (clone, setup, HF token/IndicTrans2, run, metrics, download) |
 
 > Open with the project `venv` kernel in VS Code/Antigravity for best compatibility.
 
