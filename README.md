@@ -41,7 +41,7 @@ Stage 3: group every 5 sentences and translate to English
 | Stage | Simple job | Current implementation (this repo) | Main quantitative notes |
 | --- | --- | --- | --- |
 | **Punctuation** | Predict punctuation after words/tokens | `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, CPU, token classification) via `src/punctuation.py` | Proxy mark accuracy **0.884** (275/311), avg char similarity **0.963** on `scripts/evaluate_punctuation.py` (approximate, not gold-standard) |
-| **Ordering** | Propose a likely sentence sequence | **Implemented now:** multilingual BERT pairwise scoring + Borda aggregation (`bert-base-multilingual-cased`) in `src/order_sentences.py`. **Existing generated `data/ordered/*` artifacts:** previous embedding+heuristic candidate run. | No ground-truth ordering benchmark yet → **pair accuracy / Kendall tau: not measured** |
+| **Ordering** | Propose a likely sentence sequence | **Implemented now:** multilingual BERT pairwise scoring + Borda aggregation (`bert-base-multilingual-cased`) in `src/order_sentences.py`. **Existing generated `data/ordered/*` artifacts:** previous embedding+heuristic candidate run. | Reference-alignment metrics vs `data/processed/*.sentences.txt` (best-effort matching, matched coverage **0.897**): macro **pairwise accuracy 0.457**, macro **Kendall tau -0.085** (see caveats below) |
 | **Translation** | Translate ordered Hindi to English (grouped by 5) | **Implemented:** IndicTrans2-preferred backend in `src/group_and_translate.py` with fallback to `Helsinki-NLP/opus-mt-hi-en` (MarianMT, non-LLM). **Current generated aligned/final outputs:** MarianMT fallback run (IndicTrans2 requires HF access/token + `IndicTransToolkit`). | No reference translation benchmark yet → **BLEU / chrF: not measured** |
 
 > These numbers are reported honestly for the current artifacts/scripts available in this repo. Where metrics are proxy/unavailable, this README states that explicitly.
@@ -89,8 +89,9 @@ Line *i* in `sentences_hi` corresponds to line *i* in `sentences_en`.
 
 ### Reports (`reports/`)
 - `reports/evaluation.json` — quantitative/proxy metrics and status for punctuation/ordering/translation + integrity notes
-- `reports/run_summary.json` — run/pipeline summary
+- `reports/run_summary.json` — run/pipeline summary and current artifact status
 - `reports/data_prep_summary.json` — dataset/prep summary
+- `reports/resource_profile.json` — partial CPU/runtime/memory profiling for lightweight steps (and notes on unprofiled model-heavy/GPU stages)
 
 ---
 
@@ -116,10 +117,22 @@ Source: `scripts/evaluate_punctuation.py` vs `data/processed/sample-*.sentences.
 - This is a useful rough signal, but it is **not** a definitive punctuation quality benchmark.
 - Punctuation around `NULL` and dialogue-style samples (6–7) needs manual review.
 
-### Ordering
-- **Implemented method (code):** mBERT (`bert-base-multilingual-cased`) **pairwise scoring + Borda aggregation** (`src/order_sentences.py`).
-- **Generated artifacts currently present:** candidate orders from previous heuristic run in `data/ordered/*` (can be regenerated with the new method).
-- **Metrics:** pair accuracy / Kendall tau **not measured yet** (no verified original-order ground truth).
+### Ordering (reference-alignment metrics, best-effort)
+Source: `scripts/compute_metrics.py` compares `data/ordered/*.ordered.txt` to `data/processed/sample-*.sentences.txt` by canonical text matching (matched sentences only).  
+**Caveat:** This measures alignment to the available processed reference sequence; if that reference is not verified ground-truth original order, interpret as reference-alignment rather than definitive ordering quality. Metrics below are for the **currently generated artifacts** (previous heuristic ordering run), not yet for a rerun of the newly implemented mBERT pairwise+Borda method.
+
+| Sample | Ref sents | Cand sents | Matched | Coverage | Kendall tau | Pairwise acc. |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 49 | 50 | 48 | 0.980 | -0.051 | 0.474 |
+| 2 | 50 | 49 | 45 | 0.900 | -0.111 | 0.444 |
+| 3 | 49 | 47 | 46 | 0.939 | 0.024 | 0.512 |
+| 4 | 50 | 50 | 50 | 1.000 | -0.118 | 0.441 |
+| 5 | 52 | 52 | 52 | 1.000 | -0.119 | 0.440 |
+| 6 | 53 | 48 | 41 | 0.774 | -0.144 | 0.428 |
+| 7 | 67 | 60 | 46 | 0.687 | -0.076 | 0.462 |
+| **Macro avg** | - | - | - | **0.897** | **-0.085** | **0.457** |
+
+- **Implemented method (code, not yet rerun here):** mBERT (`bert-base-multilingual-cased`) **pairwise scoring + Borda aggregation** (`src/order_sentences.py`). Regenerating `data/ordered/`, `outputs/`, and `data/final/` with this method is recommended for updated artifacts/metrics (CPU-intensive).
 
 ### Translation
 - **Implemented backend:** **IndicTrans2-preferred** (`ai4bharat/indictrans2-indic-en-dist-200M` default) with fallback to `Helsinki-NLP/opus-mt-hi-en` MarianMT (`src/group_and_translate.py`).
@@ -191,10 +204,12 @@ python src/order_sentences.py
 python src/group_and_translate.py
 python scripts/generate_aligned_outputs.py
 
-# Checks / diagnostics
+# Checks / diagnostics / metrics / profiling
 python scripts/verify_integrity.py
 python scripts/null_diagnostic.py
 python scripts/evaluate_punctuation.py
+python scripts/compute_metrics.py
+python scripts/profile_resources.py --steps integrity,metrics
 ```
 
 ### IndicTrans2 notes (translation upgrade path)
@@ -245,10 +260,10 @@ main.py                 entry point wrapper
 
 ## Honest limits
 
-- **Punctuation is not perfect.** Proxy metrics are encouraging, but manual review is required (especially `NULL`-adjacent punctuation and dialogue samples 6–7).
-- **Ordering is a candidate reconstruction.** mBERT pairwise+Borda is implemented, but ordering quality is not yet benchmarked with pair accuracy/Kendall tau against verified original order.
-- **Translation quality is not benchmarked.** Current generated outputs used MarianMT fallback; IndicTrans2 backend is implemented but depends on environment access/dependencies/token.
-- **Resource proof is incomplete.** Scripts target CPU; peak memory/runtime and any GPU VRAM usage (must remain < 1.5 GB if used) are not fully profiled/reported yet.
+- **Punctuation is not perfect.** Proxy metrics are encouraging (avg proxy mark acc. 0.884, char sim 0.963), but evaluation is approximate and manual review is required (especially `NULL`-adjacent punctuation and dialogue samples 6–7). `NULL` semantics remain unknown; handling is intentionally cautious/preservative.
+- **Ordering is a candidate reconstruction.** Reference-alignment metrics are now computed for current artifacts (`scripts/compute_metrics.py`): macro pairwise acc. **0.457**, Kendall tau **-0.085**, matched coverage **0.897** vs `data/processed/*.sentences.txt` (best-effort match; interpret with caveat). The newer mBERT pairwise+Borda implementation in code has **not yet been rerun** to regenerate artifacts.
+- **Translation quality is not benchmarked.** No BLEU/chrF/human-scored benchmark yet. Current generated outputs used **MarianMT fallback**; IndicTrans2 backend is implemented but requires HF access/token and `IndicTransToolkit` in the environment.
+- **Resource proof is partial.** CPU-targeted profiling is recorded for lightweight checks in `reports/resource_profile.json` (`scripts/verify_integrity.py` ~0.13s, `scripts/compute_metrics.py` ~0.28s, low tracemalloc peaks). Full per-stage runtime/peak RAM for model-heavy steps (punctuation/ordering/translation) and **GPU VRAM** (must remain < 1.5 GB if used) are not fully profiled yet.
 - **Dataset-specific ambiguity:** `NULL` markers have unknown semantics and must be preserved; automated handling remains cautious.
 
 ---
