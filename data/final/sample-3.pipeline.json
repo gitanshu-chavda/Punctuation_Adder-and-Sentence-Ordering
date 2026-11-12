@@ -1,0 +1,24 @@
+{
+  "ordered_input": "data\\ordered\\sample-3.ordered.txt",
+  "sentences": 47,
+  "group_size": 5,
+  "groups": 10,
+  "group_sentence_counts": [
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    2
+  ],
+  "translation_model": "Helsinki-NLP/opus-mt-hi-en",
+  "outputs": {
+    "hindi_groups": "data\\final\\sample-3.groups_hi.txt",
+    "english_groups": "data\\final\\sample-3.groups_en.txt",
+    "tsv": "data\\final\\sample-3.groups.tsv"
+  }
+}

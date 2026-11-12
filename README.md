@@ -17,22 +17,28 @@ data/
   raw/samples/          # Original faculty-provided files (read-only)
   model_input/          # Prepared copies for punctuation (NULL preserved)
   punctuated/           # Punctuation-restored outputs
-  ordered/              # Sentence-ordering outputs (candidate/mapping)
+  ordered/              # Candidate sentence-ordering outputs for all samples (.ordered.txt, .mapping.tsv, stats)
+  final/                # Grouped (5-sentence) Hindi and translated English outputs (.tsv, summaries)
   processed/            # Intermediate/derived artifacts (e.g. sentence splits, eval refs)
   external/             # Optional external corpora (not required for current pipeline)
 
 models/
   punctuation/
-    onnx/model_quantized.onnx   # Quantized ONNX model (used for inference)
+    onnx/model_quantized.onnx   # Quantized ONNX punctuation model (used for inference)
     tokenizer/                  # Local tokenizer files
     finetuned-quick/            # Experimental fine-tuned checkpoint (optional)
+  translation/                  # Local cached translation model (created on first translation run; ignored by git)
 
 src/                    # Core reusable Python modules
   prepare_input.py      # Copy raw -> model_input, preserving NULL
   punctuation.py        # Punctuation restoration (ONNX, CPU)
-  sentence-ordering.py  # Candidate sentence ordering (embeddings + heuristics)
+  order_sentences.py    # Candidate sentence ordering for all samples
+  group_and_translate.py# Group 5 ordered sentences + Hindi->English translation
+  sentence-ordering.py  # Earlier sample-1 ordering script (kept for reference)
 
 scripts/                # Utility/evaluation scripts
+  run_full_pipeline.py
+  verify_integrity.py
   evaluate_punctuation.py
   null_diagnostic.py
   ...
@@ -42,6 +48,7 @@ notebooks/              # Beginner-friendly walkthroughs (run after understandin
   01_punctuation_demo.ipynb
   02_null_diagnostic.ipynb
   03_sentence_ordering_demo.ipynb
+  04_full_pipeline.ipynb
 
 docs/
   PROJECT_GUIDE.md      # Detailed guide and current status
@@ -58,15 +65,27 @@ requirements.txt
 # 2) Prepare inputs (preserves NULL markers)
 python src/prepare_input.py
 
-# 3) Run punctuation restoration for all samples
+# 3) Run punctuation restoration for all samples (CPU/ONNX)
 python src/punctuation.py
 
-# 4) Run NULL diagnostic (inspect how NULL is treated)
-python scripts/null_diagnostic.py
+# 4) Order sentences for all samples (candidate)
+python src/order_sentences.py
 
-# 5) Run sentence ordering (currently configured for sample-1)
-python src/sentence-ordering.py
+# 5) Group every 5 ordered sentences and translate Hindi -> English (CPU)
+python src/group_and_translate.py
+
+# Optional diagnostics / checks
+python scripts/null_diagnostic.py
+python scripts/verify_integrity.py
+python scripts/evaluate_punctuation.py
+
+# Run the full implemented pipeline in one command
+python scripts/run_full_pipeline.py
 ```
+
+> Notes:
+> - Sentence ordering uses `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (downloaded/cached on first run if needed).
+> - Translation uses `Helsinki-NLP/opus-mt-hi-en` (MarianMT seq2seq model, not a GPT/Claude/Gemini chat LLM). On first run it may download and save a local copy under `models/translation/opus-mt-hi-en` if allowed. These model files are not committed to git.
 
 > Note: Scripts may download/cache Hugging Face models on first run (e.g. sentence encoder for ordering). Ensure you have internet access if caches are not present.
 
@@ -78,14 +97,24 @@ Open notebooks in VS Code/Antigravity and select the `venv` Python kernel:
 - **01_punctuation_demo.ipynb** – run and understand punctuation restoration step-by-step
 - **02_null_diagnostic.ipynb** – analyze all 67 `NULL` markers in context
 - **03_sentence_ordering_demo.ipynb** – understand and run candidate ordering
+- **04_full_pipeline.ipynb** – inspect ordering, 5-sentence grouping, and Hindi→English translation outputs
 
 ## Current status
 
-- Punctuation restoration implemented with `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, CPU).
-- All 7 samples processed to `data/punctuated/` (literal `NULL` preserved).
-- Punctuation quality and `NULL` semantics still need careful manual review.
-- Sentence ordering produces a **candidate** order for `sample-1` (not ground truth).
-- Grouping (5 sentences) and Hindi→English translation are **not implemented yet** and must remain compliant with constraints.
+- **Punctuation:** `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, CPU) via `src/punctuation.py`; outputs in `data/punctuated/`.
+- **Ordering (candidate):** embedding/heuristic ordering for all 7 samples via `src/order_sentences.py`; outputs in `data/ordered/*.ordered.txt` (+ mappings/stats).
+- **Grouping:** every 5 consecutive ordered sentences grouped per sample.
+- **Translation:** Hindi→English per group via `Helsinki-NLP/opus-mt-hi-en` (MarianMT encoder-decoder MT model, CPU) in `src/group_and_translate.py`; outputs in `data/final/` (`.groups_hi.txt`, `.groups_en.txt`, `.groups.tsv`, summaries).
+- **Integrity:** literal `NULL` markers preserved across raw/model_input/punctuated/ordered/final-hi in current generated outputs (67 total). Verify with `python scripts/verify_integrity.py`.
+- **Still needs review:** punctuation quality, `NULL` semantics/handling, and ordering correctness are not ground-truth validated. Translation quality depends on upstream steps.
+
+## Notes for faculty/reproducibility
+
+- **Punctuation model:** `Horizon-Labs/punctuation-restoration-small` (encoder token classifier), used as local quantized ONNX for CPU inference.
+- **Sentence encoder:** `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` for candidate ordering (embeddings + clustering/heuristics).
+- **Translation model:** `Helsinki-NLP/opus-mt-hi-en` (MarianMT neural MT). This is not GPT/Gemini/Claude. The script can cache it locally under `models/translation/opus-mt-hi-en`.
+- No off-the-shelf generative chat LLMs are used in the pipeline scripts. Keep total GPU memory under 1.5 GB if adapting components to GPU.
+- Outputs should be evaluated manually/sampled; execution success ≠ correctness.
 
 ## Notes for faculty/reproducibility
 

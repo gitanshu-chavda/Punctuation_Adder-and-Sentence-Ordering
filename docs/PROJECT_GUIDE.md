@@ -48,11 +48,26 @@ Prepared copies for the model live in `data/model_input/` and must keep all `NUL
 - Script: `scripts/null_diagnostic.py`
 - Compares raw vs punctuated text around every `NULL` occurrence (by order) to show inserted punctuation/context.
 
-### 3.4 Sentence ordering (candidate)
-- Script: `src/sentence-ordering.py`
-- Currently processes `data/punctuated/sample-1.txt` → `data/ordered/sample-1.candidate.txt` and `sample-1.mapping.tsv`
-- Uses multilingual sentence embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`) and heuristics (topic clustering + greedy coherence path).
-- **Important:** This is a *candidate* order, not guaranteed original order. Embedding model download/size and runtime should be checked against project constraints if GPU/large models are involved.
+### 3.4 Sentence ordering (candidate, all samples)
+- Primary script: `src/order_sentences.py`
+- Reads `data/punctuated/sample-*.txt` and writes per-sample outputs to `data/ordered/`:
+  - `sample-N.ordered.txt` (one sentence per line, candidate order)
+  - `sample-N.mapping.tsv` (new position, original position, topic)
+  - `sample-N.order_stats.json`
+  - `ordering_summary.json`
+- Uses multilingual sentence embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`) with clustering/heuristics to propose an order.
+- **Important:** This is a *candidate* order, not guaranteed original/logical ground truth. Review before downstream use.
+
+### 3.5 Grouping and translation (implemented)
+- Script: `src/group_and_translate.py`
+- Reads `data/ordered/sample-*.ordered.txt`, groups every **5 consecutive sentences** (last group may be smaller), and translates each Hindi group to English.
+- Translation model: `Helsinki-NLP/opus-mt-hi-en` (MarianMT neural MT, encoder-decoder seq2seq), run on CPU via `transformers`/PyTorch. This is **not** GPT/Gemini/Claude.
+- On first run the model may be downloaded and cached locally under `models/translation/opus-mt-hi-en` (ignored by git due to `models/*`).
+- Outputs in `data/final/`: `sample-N.groups_hi.txt`, `sample-N.groups_en.txt`, `sample-N.groups.tsv`, `sample-N.pipeline.json`, `translation_summary.json`.
+
+### 3.6 Verification
+- `scripts/verify_integrity.py` checks literal `NULL` preservation and basic counts across stages.
+- `scripts/run_full_pipeline.py` runs prepare → punctuation → ordering → grouping/translation end-to-end.
 
 ## 4. How to work (recommended workflow)
 
@@ -67,14 +82,15 @@ Prepared copies for the model live in `data/model_input/` and must keep all `NUL
 - `00_start_here.ipynb`: environment, paths, and sanity checks
 - `01_punctuation_demo.ipynb`: step-by-step punctuation restoration
 - `02_null_diagnostic.ipynb`: understand `NULL` behavior
-- `03_sentence_ordering_demo.ipynb`: understand candidate ordering
+- `03_sentence_ordering_demo.ipynb`: understand candidate ordering (sample-level demo)
+- `04_full_pipeline.ipynb`: inspect full pipeline outputs (ordering, 5-sentence grouping, translation)
 
 Use notebooks to **learn and demonstrate**; keep core logic in `src/` and `scripts/`.
 
-## 6. Next steps (after punctuation quality is acceptable)
+## 6. Remaining work / quality improvements
 
-- Extend sentence ordering to all samples and improve evaluation strategy
-- Group every 5 consecutive ordered sentences
-- Choose a compliant Hindi→English translation method (no generative LLMs, <1.5GB GPU total) and implement it
-- Measure runtime and memory usage end-to-end
-- Prepare a clean faculty demo notebook showcasing the full pipeline
+- **Punctuation quality:** manual review and targeted fixes (token-boundary placement, NULL-adjacent punctuation, dialogue cases). Consider a small human-annotated subset for evaluation.
+- **Ordering quality:** validate candidate order against logical/original sequence; improve heuristics or evaluation if needed.
+- **Translation quality:** review `data/final/*.groups_en.txt` (MT errors can come from punctuation/order/domain). Keep translation method compliant (no generative LLMs, <1.5GB GPU total).
+- **Resource reporting:** measure model load time, per-file inference time, CPU/GPU memory usage for faculty demonstration.
+- **Demo polish:** curate examples and explanations in `04_full_pipeline.ipynb` (or a dedicated presentation notebook) once outputs are reviewed.

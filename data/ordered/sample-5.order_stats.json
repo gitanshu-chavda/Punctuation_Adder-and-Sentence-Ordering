@@ -1,0 +1,9 @@
+{
+  "input": "data\\punctuated\\sample-5.txt",
+  "sentences": 52,
+  "topics": 6,
+  "outputs": {
+    "ordered": "data\\ordered\\sample-5.ordered.txt",
+    "mapping": "data\\ordered\\sample-5.mapping.tsv"
+  }
+}
