@@ -91,7 +91,9 @@ Line *i* in `sentences_hi` corresponds to line *i* in `sentences_en`.
 - `reports/evaluation.json` — quantitative/proxy metrics and status for punctuation/ordering/translation + integrity notes
 - `reports/run_summary.json` — run/pipeline summary and current artifact status
 - `reports/data_prep_summary.json` — dataset/prep summary
-- `reports/resource_profile.json` — partial CPU/runtime/memory profiling for lightweight steps (and notes on unprofiled model-heavy/GPU stages)
+- `reports/resource_profile.json` — partial CPU/runtime/memory profiling (lightweight checks + `prepare` and `punctuation` stage timings; full ordering/translation heavy-stage and GPU VRAM profiling still pending)
+- `reports/null_punct_analysis.json` / `reports/punctuation_manual_review.md` — automated-assisted NULL/punctuation review artifacts
+- `reports/manual_review_checklist.md` / `reports/translation_review_template.csv` — manual review and translation quality review scaffolding
 
 ---
 
@@ -220,7 +222,7 @@ python scripts/profile_resources.py --steps integrity,metrics
   - `INDICTRANS2_MODEL_ID=...`
   - `INDICTRANS2_LOCAL_DIR=...`
 
-If IndicTrans2 is unavailable, the pipeline falls back to MarianMT.
+If IndicTrans2 is unavailable, the pipeline falls back to MarianMT. (In the current environment, IndicTrans2 execution is blocked by missing token/toolkit access, so generated translations remain MarianMT fallback until configured.)
 
 ---
 
@@ -260,11 +262,11 @@ main.py                 entry point wrapper
 
 ## Honest limits
 
-- **Punctuation is not perfect.** Proxy metrics are encouraging (avg proxy mark acc. 0.884, char sim 0.963), but evaluation is approximate and manual review is required (especially `NULL`-adjacent punctuation and dialogue samples 6–7). `NULL` semantics remain unknown; handling is intentionally cautious/preservative.
-- **Ordering is a candidate reconstruction.** Reference-alignment metrics are now computed for current artifacts (`scripts/compute_metrics.py`): macro pairwise acc. **0.457**, Kendall tau **-0.085**, matched coverage **0.897** vs `data/processed/*.sentences.txt` (best-effort match; interpret with caveat). The newer mBERT pairwise+Borda implementation in code has **not yet been rerun** to regenerate artifacts.
-- **Translation quality is not benchmarked.** No BLEU/chrF/human-scored benchmark yet. Current generated outputs used **MarianMT fallback**; IndicTrans2 backend is implemented but requires HF access/token and `IndicTransToolkit` in the environment.
-- **Resource proof is partial.** CPU-targeted profiling is recorded for lightweight checks in `reports/resource_profile.json` (`scripts/verify_integrity.py` ~0.13s, `scripts/compute_metrics.py` ~0.28s, low tracemalloc peaks). Full per-stage runtime/peak RAM for model-heavy steps (punctuation/ordering/translation) and **GPU VRAM** (must remain < 1.5 GB if used) are not fully profiled yet.
-- **Dataset-specific ambiguity:** `NULL` markers have unknown semantics and must be preserved; automated handling remains cautious.
+- **Punctuation is not perfect.** Proxy metrics are encouraging (avg proxy mark acc. 0.884, char sim 0.963), but evaluation is approximate and manual review is required (especially `NULL`-adjacent punctuation and dialogue samples 6–7). `NULL` semantics remain unknown; handling is intentionally cautious/preservative. Automated-assisted review artifacts are available in `reports/null_punct_analysis.json` and `reports/punctuation_manual_review.md`.
+- **Ordering is a candidate reconstruction.** Reference-alignment metrics for previously generated artifacts (`scripts/compute_metrics.py`): macro pairwise acc. **0.457**, Kendall tau **-0.085**, matched coverage **0.897** vs `data/processed/*.sentences.txt` (best-effort match; interpret with caveat). mBERT pairwise+Borda is implemented in `src/order_sentences.py`; a rerun to regenerate all ordered/final/output artifacts is **in progress** (not yet completed/benchmarked).
+- **Translation quality is not benchmarked.** No BLEU/chrF/human-scored benchmark yet. Current generated outputs used **MarianMT fallback**; IndicTrans2 backend is implemented but requires HF access/token and `IndicTransToolkit` in the environment. Review template: `reports/translation_review_template.csv`.
+- **Resource proof is partial.** CPU-targeted profiling is recorded in `reports/resource_profile.json`: `prepare` ~0.115s, `punctuation` ~123.7s (7 samples, ONNX CPU), plus lightweight checks (`verify_integrity.py` ~0.13s, `compute_metrics.py` ~0.28s). Full per-stage runtime/peak RAM for ordering/translation and **GPU VRAM** (must remain < 1.5 GB if used) are not fully profiled yet.
+- **Dataset-specific ambiguity:** `NULL` markers have unknown semantics and must be preserved; automated handling remains cautious. Use `reports/manual_review_checklist.md` for review tracking.
 
 ---
 

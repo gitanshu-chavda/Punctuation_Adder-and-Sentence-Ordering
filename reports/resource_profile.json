@@ -1,35 +1,35 @@
 {
-  "generated_at": "2026-11-12T13:11:35.323154+00:00",
+  "generated_at": "2026-11-12T14:08:58.500856+00:00",
   "platform": "win32",
   "python": "3.13.6 (tags/v3.13.6:4e66535, Aug  6 2025, 14:36:00) [MSC v.1944 64 bit (AMD64)]",
   "cpu_only_pipeline_note": "Current scripts target CPU. GPU VRAM not measured in this profile; if using GPU, measure peak VRAM and keep < 1.5 GB.",
   "steps": [
     {
-      "step": "integrity",
+      "step": "prepare",
       "command": [
         "D:\\Punctuation_Adder-and-Sentence-Ordering\\venv\\Scripts\\python.exe",
-        "scripts/verify_integrity.py"
+        "src/prepare_input.py"
       ],
-      "seconds": 0.129,
+      "seconds": 0.115,
       "returncode": 0,
-      "python_tracemalloc_peak_mb": 0.825,
-      "rss_mb_before": 21.25,
-      "rss_mb_after": 20.957,
-      "stdout_tail": "sample,raw_NULL,model_input_NULL,punctuated_NULL,ordered_NULL,final_hi_NULL,raw_chars,punct_chars,ordered_chars,ordered_sentences,groups\nsample-1,5,5,5,5,5,3797,3851,3852,50,10\nsample-2,5,5,5,5,5,3825,3881,3882,49,10\nsample-3,6,6,6,6,6,3931,3989,3990,47,10\nsample-4,4,4,4,4,4,5428,5504,5505,50,10\nsample-5,9,9,9,9,9,4992,5079,5080,52,11\nsample-6,11,11,11,11,11,2330,2422,2423,48,10\nsample-7,27,27,27,27,27,3913,4000,4001,60,12\n\nNote: This is a quick integrity check. Always inspect outputs manually.\n",
+      "python_tracemalloc_peak_mb": 0.834,
+      "rss_mb_before": 20.602,
+      "rss_mb_after": 20.07,
+      "stdout_tail": "sample-1.txt: 5 NULL markers preserved\nsample-2.txt: 5 NULL markers preserved\nsample-3.txt: 6 NULL markers preserved\nsample-4.txt: 4 NULL markers preserved\nsample-5.txt: 9 NULL markers preserved\nsample-6.txt: 11 NULL markers preserved\nsample-7.txt: 27 NULL markers preserved\n\n========================================\nINPUT PREPARATION COMPLETED\nFiles copied: 7\nNULL markers preserved: 67\nOutput folder: data\\model_input\n",
       "stderr_tail": ""
     },
     {
-      "step": "metrics",
+      "step": "punctuation",
       "command": [
         "D:\\Punctuation_Adder-and-Sentence-Ordering\\venv\\Scripts\\python.exe",
-        "scripts/compute_metrics.py"
+        "src/punctuation.py"
       ],
-      "seconds": 0.281,
+      "seconds": 123.687,
       "returncode": 0,
       "python_tracemalloc_peak_mb": 0.041,
-      "rss_mb_before": 20.957,
-      "rss_mb_after": 20.965,
-      "stdout_tail": "Wrote reports/evaluation.json and reports/run_summary.json\nOrdering macro avg tau: -0.08516122918336276\nOrdering macro avg pairwise acc: 0.45741938540831867\nOrdering macro avg matched coverage: 0.8969313452540367\n",
+      "rss_mb_before": 20.07,
+      "rss_mb_after": 20.066,
+      "stdout_tail": "Punctuation model loaded successfully!\nInference provider: ['CPUExecutionProvider']\n\nProcessing: sample-1.txt\nCharacters: 3797\nFull stops: 49\nCommas: 5\nQuestions: 1\nSaved: data\\punctuated\\sample-1.txt\n\nProcessing: sample-2.txt\nCharacters: 3825\nFull stops: 48\nCommas: 8\nQuestions: 1\nSaved: data\\punctuated\\sample-2.txt\n\nProcessing: sample-3.txt\nCharacters: 3931\nFull stops: 47\nCommas: 12\nQuestions: 0\nSaved: data\\punctuated\\sample-3.txt\n\nProcessing: sample-4.txt\nCharacters: 5428\nFull stops: 50\nCommas: 22\nQuestions: 0\nSaved: data\\punctuated\\sample-4.txt\n\nProcessing: sample-5.txt\nCharacters: 4992\nFull stops: 52\nCommas: 25\nQuestions: 0\nSaved: data\\punctuated\\sample-5.txt\n\nProcessing: sample-6.txt\nCharacters: 2330\nFull stops: 39\nCommas: 32\nQuestions: 9\nSaved: data\\punctuated\\sample-6.txt\n\nProcessing: sample-7.txt\nCharacters: 3913\nFull stops: 52\nCommas: 15\nQuestions: 7\nSaved: data\\punctuated\\sample-7.txt\n\n=============================================\nPUNCTUATION RESTORATION COMPLETED\nTotal files processed: 7\nOutput folder: data\\punctuated\n",
       "stderr_tail": ""
     }
   ]
