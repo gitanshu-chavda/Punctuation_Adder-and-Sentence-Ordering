@@ -34,13 +34,31 @@ Stage 2: put sentences in a candidate order         -> data/ordered/*.ordered.tx
 Stage 3: group every 5 and translate to English     -> outputs/* and data/final/*
 ```
 
-## The three stages
+## Approach
 
-| Stage | Simple job | Model / Implementation | Notes (from Colab run artifacts) |
+The pipeline solves the task in three stages, keeping the original text structure and all literal `NULL` markers intact.
+
+| Stage | Question | Implementation (this repo) | Notes (from synced Colab run) |
 | --- | --- | --- | --- |
-| **Punctuation** | Predict punctuation/sentence boundaries per word/token | `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, token classification), ONNX Runtime (CPU) via `src/punctuation/restore.py` | Runs on CPU. NULL-adjacent cases need manual review. |
-| **Ordering** | Propose a sentence sequence | `bert-base-multilingual-cased` (mBERT) **pairwise scoring + Borda aggregation**, `src/ordering/order.py` | Ran on **Colab GPU (Tesla T4)** in the executed run; per-sample peak VRAM **~0.75–0.77 GB allocated / ~0.92–1.05 GB reserved** (budget 1.5 GB, all under budget). Unsupervised/candidate ordering (not trained from scratch here). |
-| **Translation** | Translate ordered Hindi to English (grouped by 5) | **MarianMT fallback:** `Helsinki-NLP/opus-mt-hi-en` via `src/translation/translate.py` (IndicTrans2 preferred: `ai4bharat/indictrans2-indic-en-dist-200M`, configurable). | **Current executed run used MarianMT fallback**. IndicTrans2 can be enabled in Colab with HF access/token if available. |
+| **1. Punctuation restoration** | Where do punctuation marks and sentence boundaries go? | `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, token classification) via `src/punctuation/restore.py` (ONNX Runtime, CPU) | Predicts punctuation labels per token/word context and inserts marks (e.g. danda `।`, commas, `?`, `:`) without rewriting words; preserves `NULL`. |
+| **2. Sentence ordering** | In what order should the sentences likely appear? | `bert-base-multilingual-cased` (mBERT) **pairwise scoring + Borda aggregation** via `src/ordering/order.py` | Unsupervised candidate reconstruction: score sentence pairs with mBERT encodings/features, aggregate preferences into a global order. In Colab ran on **Tesla T4** with peak allocated VRAM ~0.75–0.77 GB (**< 1.5 GB budget**). |
+| **3. Grouping & translation** | How to translate while keeping alignment and 5-sentence groups? | Group every 5 ordered sentences; translate with `src/translation/translate.py` (**IndicTrans2 preferred**, configurable; **MarianMT fallback** used in this run: `Helsinki-NLP/opus-mt-hi-en`) | Sentence-level aligned translations for `outputs/` and grouped translations for `data/final/`; backend/model recorded in summaries. |
+
+### Stage 1: Punctuation restoration (simple view)
+- **Input:** unpunctuated/jumbled Hindi text with literal `NULL` tokens preserved.
+- **Model job:** for each word/token context, predict whether punctuation follows (e.g. none, comma, sentence end/danda, question mark, colon/dash as supported) — it labels/inserts punctuation rather than rewriting content.
+- **Why this design:** a lightweight pretrained ONNX token classifier runs efficiently on CPU and fits the “no chat/generative LLM” constraint.
+
+### Stage 2: Sentence ordering (simple view)
+- **Input:** punctuated text split into sentence-like units.
+- **Model job:** estimate pairwise “which comes before which?” preferences using multilingual BERT sentence-pair representations, then combine all pairwise preferences with **Borda aggregation** to produce one candidate sequence.
+- **Why this design:** direct permutation search is intractable; pairwise scoring + rank aggregation is a practical unsupervised baseline. Ordering is treated as a **candidate reconstruction** and may need manual review.
+
+### Stage 3: Grouping and translation (simple view)
+- **Input:** candidate ordered Hindi sentences.
+- **Grouping:** consecutive groups of 5 sentences (last group may be smaller), preserved in aligned output files.
+- **Translation:** Hindi→English translation per sentence/group using a seq2seq MT model (**IndicTrans2** when configured/available, else **MarianMT** fallback in this run). Translating aligned units helps keep Hindi/English lines and groups in correspondence.
+- **Why this design:** satisfies the assignment’s 5-sentence grouping requirement and keeps outputs easy to verify (`outputs/sample-N.sentences_hi/en.txt`, `outputs/sample-N.groups_hi/en.txt`). No GPT/Claude/Gemini used.
 
 ## Notebooks
 
@@ -118,23 +136,13 @@ python scripts/compute_metrics.py
 
 > Metrics depend on run configuration (translation backend/access, environment). This repo reports results honestly with caveats in `reports/` and README.
 
-## How it works
+## Implementation details
 
-### Stage 1: Punctuation restoration
-- **Code:** `src/punctuation/restore.py` (compat `src/punctuation.py`)
-- **Model:** `Horizon-Labs/punctuation-restoration-small` (quantized ONNX, token classifier) — not a chat/generative LLM
-- **Runtime:** ONNX Runtime CPU; tokenization + chunked inference; predicted punctuation inserted at word boundaries; saved to `data/punctuated/`
-
-### Stage 2: Sentence ordering (candidate)
-- **Code:** `src/ordering/order.py` (compat `src/order_sentences.py`)
-- **Model:** `bert-base-multilingual-cased` (mBERT)
-- **Approach:** extract sentences → pairwise mBERT scoring for (i,j) pairs → Borda aggregation → candidate order + mapping/stats in `data/ordered/`
-- **CUDA/VRAM:** in Colab GPU run uses our built-in logging/budget checks (prints peak allocated/reserved and flags over-budget if any)
-
-### Stage 3: Grouping and translation
-- **Code:** `src/translation/translate.py` (compat `src/group_and_translate.py`)
-- **Grouping:** every 5 ordered sentences (last group may be smaller)
-- **Translation:** sentence/group translations to English (`outputs/*` aligned, `data/final/*` grouped). Prefers IndicTrans2 if available; falls back to MarianMT if not. No silent hidden fallback beyond configured backend/fallback logic.
+- **Entry points / pipeline:** `main.py`, `src/pipeline.py`, and stage scripts/wrappers in `src/` (`punctuation/restore.py`, `ordering/order.py`, `translation/translate.py`).
+- **Punctuation runtime:** ONNX Runtime (CPU) with chunked inference; outputs in `data/punctuated/`.
+- **Ordering artifacts:** `data/ordered/*.ordered.txt`, `*.mapping.tsv`, `*.order_stats.json`, `ordering_summary.json` (includes CUDA VRAM logging/peaks when run on GPU).
+- **Translation artifacts:** `data/final/` (grouped HI/EN, TSV/JSON metadata) and aligned `outputs/` files; backend/model recorded in `data/final/translation_summary.json`.
+- **Configuration:** translation backend/model via env vars (`TRANSLATION_BACKEND`, `INDICTRANS2_MODEL_ID`, etc.); ordering device/batch/length/VRAM budget via `ORDERING_*` env vars. No chat/generative LLMs (GPT/Gemini/Claude).
 
 ## Repository structure
 
