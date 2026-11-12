@@ -274,6 +274,13 @@ class PunctuationRestorer:
 # --------------------------------------------------
 
 if __name__ == "__main__":
+    import sys
+
+    # Ensure Hindi/Unicode output prints safely on Windows consoles
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
