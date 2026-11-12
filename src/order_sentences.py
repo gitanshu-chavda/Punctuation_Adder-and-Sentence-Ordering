@@ -16,11 +16,18 @@ Approach:
 
 Run from project root:
     python src/order_sentences.py
+
+Environment variables:
+    ORDERING_DEVICE=auto|cpu|cuda   (default: auto)
+    ORDERING_BATCH_SIZE=<int>       (default: 16)
+    ORDERING_MAX_LENGTH=<int>       (default: 256)
+    ORDERING_MAX_VRAM_GB=<float>    (default: 1.5; GPU memory budget check)
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -33,9 +40,34 @@ from transformers import AutoModel, AutoTokenizer
 INPUT_FOLDER = Path("data/punctuated")
 OUTPUT_FOLDER = Path("data/ordered")
 BERT_MODEL_NAME = "bert-base-multilingual-cased"
-MAX_LENGTH = 256
-BATCH_SIZE = 16
 RANDOM_SEED = 42
+
+
+def _get_env_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        print(f"[ordering] Invalid {name}={raw!r}; using default {default}")
+        return default
+
+
+def _get_env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        print(f"[ordering] Invalid {name}={raw!r}; using default {default}")
+        return default
+
+
+MAX_LENGTH = _get_env_int("ORDERING_MAX_LENGTH", 256)
+BATCH_SIZE = _get_env_int("ORDERING_BATCH_SIZE", 16)
+MAX_VRAM_GB = _get_env_float("ORDERING_MAX_VRAM_GB", 1.5)
 
 CONTEXT_STARTERS = {
     "इसलिए", "इसके", "इसीलिए", "तब", "फिर", "लेकिन", "किंतु",
@@ -84,6 +116,37 @@ class MBertPairwiseOrderer:
         self.model = AutoModel.from_pretrained(model_name)
         self.model.to(self.device)
         self.model.eval()
+        if self.device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(self.device)
+            torch.cuda.synchronize(self.device)
+            alloc = torch.cuda.memory_allocated(self.device) / (1024**3)
+            reserved = torch.cuda.memory_reserved(self.device) / (1024**3)
+            print(
+                f"[ordering][cuda] After model load: allocated={alloc:.3f} GB, "
+                f"reserved={reserved:.3f} GB, budget={MAX_VRAM_GB:.3f} GB",
+                flush=True,
+            )
+
+    def cuda_memory_report(self, label: str) -> dict | None:
+        if self.device.type != "cuda":
+            return None
+        torch.cuda.synchronize(self.device)
+        peak_alloc = torch.cuda.max_memory_allocated(self.device) / (1024**3)
+        peak_reserved = torch.cuda.max_memory_reserved(self.device) / (1024**3)
+        over_budget = peak_alloc > MAX_VRAM_GB
+        status = "OVER_BUDGET" if over_budget else "OK"
+        print(
+            f"[ordering][cuda] {label}: peak_allocated={peak_alloc:.3f} GB, "
+            f"peak_reserved={peak_reserved:.3f} GB, budget={MAX_VRAM_GB:.3f} GB [{status}]",
+            flush=True,
+        )
+        return {
+            "label": label,
+            "peak_allocated_gb": round(peak_alloc, 6),
+            "peak_reserved_gb": round(peak_reserved, 6),
+            "budget_gb": MAX_VRAM_GB,
+            "over_budget": over_budget,
+        }
 
     @torch.no_grad()
     def encode_sentences(self, sentences: list[str]) -> np.ndarray:
@@ -206,7 +269,13 @@ def process_file(orderer: MBertPairwiseOrderer, input_file: Path, output_folder:
     if not sentences:
         raise ValueError(f"No sentences found in {input_file}")
 
+    if orderer.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(orderer.device)
+
     ordered_ids, topic_numbers, meta = orderer.order(sentences)
+    cuda_mem = orderer.cuda_memory_report(f"{input_file.name}")
+    if cuda_mem is not None:
+        meta = {**meta, "cuda_memory": cuda_mem}
     stem = input_file.stem
     ordered_file = output_folder / f"{stem}.ordered.txt"
     mapping_file = output_folder / f"{stem}.mapping.tsv"
@@ -229,6 +298,17 @@ def process_file(orderer: MBertPairwiseOrderer, input_file: Path, output_folder:
     return stats
 
 
+def resolve_device() -> str:
+    requested = os.getenv("ORDERING_DEVICE", "auto").strip().lower()
+    if requested in {"cpu", "cuda"}:
+        if requested == "cuda" and not torch.cuda.is_available():
+            print("[ordering] ORDERING_DEVICE=cuda requested but CUDA is unavailable; falling back to CPU")
+            return "cpu"
+        return requested
+    # auto
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 def main() -> int:
     _safe_stdout()
     np.random.seed(RANDOM_SEED)
@@ -240,22 +320,68 @@ def main() -> int:
         print(f"No input files found in {INPUT_FOLDER}")
         return 1
 
+    device = resolve_device()
     print(f"Loading multilingual BERT for pairwise ordering: {BERT_MODEL_NAME}", flush=True)
-    orderer = MBertPairwiseOrderer(BERT_MODEL_NAME, device="cpu")
+    print(
+        f"Device={device} batch_size={BATCH_SIZE} max_length={MAX_LENGTH} "
+        f"max_vram_budget_gb={MAX_VRAM_GB}",
+        flush=True,
+    )
+    if device == "cuda":
+        print(f"CUDA device: {torch.cuda.get_device_name(0)}", flush=True)
+
+    orderer = MBertPairwiseOrderer(BERT_MODEL_NAME, device=device)
 
     results = []
+    any_over_budget = False
     for f in files:
         print(f"\nOrdering {f.name} ...", flush=True)
         stats = process_file(orderer, f, OUTPUT_FOLDER)
         results.append(stats)
-        print(f"  sentences={stats['sentences']} method={stats['ordering'].get('method')} -> {stats['outputs']['ordered']}")
+        cuda_mem = stats.get("ordering", {}).get("cuda_memory")
+        if cuda_mem and cuda_mem.get("over_budget"):
+            any_over_budget = True
+        print(
+            f"  sentences={stats['sentences']} method={stats['ordering'].get('method')} "
+            f"-> {stats['outputs']['ordered']}"
+        )
 
     s1_ordered = OUTPUT_FOLDER / "sample-1.ordered.txt"
     s1_candidate = OUTPUT_FOLDER / "sample-1.candidate.txt"
     if s1_ordered.exists():
         s1_candidate.write_text(s1_ordered.read_text(encoding="utf-8"), encoding="utf-8")
 
-    summary = {"model": BERT_MODEL_NAME, "files": results}
+    summary = {
+        "model": BERT_MODEL_NAME,
+        "device": device,
+        "batch_size": BATCH_SIZE,
+        "max_length": MAX_LENGTH,
+        "max_vram_budget_gb": MAX_VRAM_GB,
+        "any_over_budget": any_over_budget,
+        "files": results,
+    }
+    if device == "cuda":
+        torch.cuda.synchronize()
+        summary["cuda_peak_allocated_gb_overall"] = round(
+            torch.cuda.max_memory_allocated() / (1024**3), 6
+        )
+        summary["cuda_peak_reserved_gb_overall"] = round(
+            torch.cuda.max_memory_reserved() / (1024**3), 6
+        )
+        print(
+            f"\n[ordering][cuda] Overall peak_allocated={summary['cuda_peak_allocated_gb_overall']:.3f} GB, "
+            f"peak_reserved={summary['cuda_peak_reserved_gb_overall']:.3f} GB, "
+            f"budget={MAX_VRAM_GB:.3f} GB "
+            f"[{'OVER_BUDGET' if any_over_budget else 'OK'}]",
+            flush=True,
+        )
+        if any_over_budget:
+            print(
+                "[ordering][cuda] WARNING: Peak VRAM exceeded budget in at least one sample. "
+                "Reduce ORDERING_BATCH_SIZE/ORDERING_MAX_LENGTH or use ORDERING_DEVICE=cpu for compliance.",
+                flush=True,
+            )
+
     (OUTPUT_FOLDER / "ordering_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
