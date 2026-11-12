@@ -1,7 +1,13 @@
 {
   "input": "data\\punctuated\\sample-5.txt",
   "sentences": 52,
-  "topics": 6,
+  "topics": 1,
+  "ordering": {
+    "method": "mbert_pairwise_borda",
+    "model": "bert-base-multilingual-cased",
+    "sentences": 52,
+    "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order."
+  },
   "outputs": {
     "ordered": "data\\ordered\\sample-5.ordered.txt",
     "mapping": "data\\ordered\\sample-5.mapping.tsv"

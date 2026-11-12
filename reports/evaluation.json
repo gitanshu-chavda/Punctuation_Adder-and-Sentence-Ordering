@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T13:12:35.451051+00:00",
+  "generated_at": "2026-11-12T14:40:49.974952+00:00",
   "punctuation": {
     "model": "Horizon-Labs/punctuation-restoration-small (quantized ONNX, CPU)",
     "proxy_evaluation": {
@@ -13,8 +13,8 @@
   "ordering": {
     "reference": "data/processed/sample-*.sentences.txt (best-effort alignment by canonical text)",
     "caveat": "Metrics are computed only on matched sentences. If references are not ground-truth original order, interpret as reference-alignment rather than true ordering accuracy.",
-    "macro_avg_kendall_tau": -0.08516122918336276,
-    "macro_avg_pairwise_accuracy": 0.45741938540831867,
+    "macro_avg_kendall_tau": -0.0026057749879352258,
+    "macro_avg_pairwise_accuracy": 0.4986971125060324,
     "macro_avg_matched_coverage": 0.8969313452540367,
     "per_sample": [
       {
@@ -23,8 +23,8 @@
         "candidate_sentences": 50,
         "matched_sentences": 48,
         "coverage": 0.9795918367346939,
-        "kendall_tau_vs_ref": -0.051418439716312055,
-        "pairwise_accuracy_vs_ref": 0.47429078014184395
+        "kendall_tau_vs_ref": 0.07446808510638298,
+        "pairwise_accuracy_vs_ref": 0.5372340425531915
       },
       {
         "sample": 2,
@@ -32,8 +32,8 @@
         "candidate_sentences": 49,
         "matched_sentences": 45,
         "coverage": 0.9,
-        "kendall_tau_vs_ref": -0.1111111111111111,
-        "pairwise_accuracy_vs_ref": 0.4444444444444444
+        "kendall_tau_vs_ref": 0.10505050505050505,
+        "pairwise_accuracy_vs_ref": 0.5525252525252525
       },
       {
         "sample": 3,
@@ -41,8 +41,8 @@
         "candidate_sentences": 47,
         "matched_sentences": 46,
         "coverage": 0.9387755102040817,
-        "kendall_tau_vs_ref": 0.024154589371980676,
-        "pairwise_accuracy_vs_ref": 0.5120772946859904
+        "kendall_tau_vs_ref": -0.1323671497584541,
+        "pairwise_accuracy_vs_ref": 0.43381642512077295
       },
       {
         "sample": 4,
@@ -50,8 +50,8 @@
         "candidate_sentences": 50,
         "matched_sentences": 50,
         "coverage": 1.0,
-        "kendall_tau_vs_ref": -0.11836734693877551,
-        "pairwise_accuracy_vs_ref": 0.44081632653061226
+        "kendall_tau_vs_ref": -0.2016326530612245,
+        "pairwise_accuracy_vs_ref": 0.39918367346938777
       },
       {
         "sample": 5,
@@ -59,8 +59,8 @@
         "candidate_sentences": 52,
         "matched_sentences": 52,
         "coverage": 1.0,
-        "kendall_tau_vs_ref": -0.1191553544494721,
-        "pairwise_accuracy_vs_ref": 0.44042232277526394
+        "kendall_tau_vs_ref": -0.04072398190045249,
+        "pairwise_accuracy_vs_ref": 0.4796380090497738
       },
       {
         "sample": 6,
@@ -68,8 +68,8 @@
         "candidate_sentences": 48,
         "matched_sentences": 41,
         "coverage": 0.7735849056603774,
-        "kendall_tau_vs_ref": -0.14390243902439023,
-        "pairwise_accuracy_vs_ref": 0.42804878048780487
+        "kendall_tau_vs_ref": 0.06585365853658537,
+        "pairwise_accuracy_vs_ref": 0.5329268292682927
       },
       {
         "sample": 7,
@@ -77,8 +77,8 @@
         "candidate_sentences": 60,
         "matched_sentences": 46,
         "coverage": 0.6865671641791045,
-        "kendall_tau_vs_ref": -0.07632850241545894,
-        "pairwise_accuracy_vs_ref": 0.4618357487922705
+        "kendall_tau_vs_ref": 0.1111111111111111,
+        "pairwise_accuracy_vs_ref": 0.5555555555555556
       }
     ]
   },

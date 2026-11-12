@@ -16,7 +16,8 @@
     5,
     2
   ],
-  "translation_model": "Helsinki-NLP/opus-mt-hi-en",
+  "translation_backend": "marian",
+  "translation_model": "models\\translation\\opus-mt-hi-en",
   "outputs": {
     "hindi_groups": "data\\final\\sample-5.groups_hi.txt",
     "english_groups": "data\\final\\sample-5.groups_en.txt",
