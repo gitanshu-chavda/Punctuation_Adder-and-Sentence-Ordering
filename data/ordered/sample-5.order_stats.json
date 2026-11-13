@@ -1,0 +1,22 @@
+{
+  "input": "data\\punctuated\\sample-5.txt",
+  "sentences": 52,
+  "topics": 1,
+  "ordering": {
+    "method": "mbert_pairwise_borda",
+    "model": "bert-base-multilingual-cased",
+    "sentences": 52,
+    "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+    "cuda_memory": {
+      "label": "sample-5.txt",
+      "peak_allocated_gb": 0.761976,
+      "peak_reserved_gb": 1.050781,
+      "budget_gb": 1.5,
+      "over_budget": false
+    }
+  },
+  "outputs": {
+    "ordered": "data\\ordered\\sample-5.ordered.txt",
+    "mapping": "data\\ordered\\sample-5.mapping.tsv"
+  }
+}

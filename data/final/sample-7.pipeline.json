@@ -1,0 +1,27 @@
+{
+  "ordered_input": "data\\ordered\\sample-7.ordered.txt",
+  "sentences": 60,
+  "group_size": 5,
+  "groups": 12,
+  "group_sentence_counts": [
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5
+  ],
+  "translation_backend": "marian",
+  "translation_model": "models\\translation\\opus-mt-hi-en",
+  "outputs": {
+    "hindi_groups": "data\\final\\sample-7.groups_hi.txt",
+    "english_groups": "data\\final\\sample-7.groups_en.txt",
+    "tsv": "data\\final\\sample-7.groups.tsv"
+  }
+}

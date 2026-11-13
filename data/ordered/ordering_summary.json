@@ -1,0 +1,166 @@
+{
+  "model": "bert-base-multilingual-cased",
+  "device": "cuda",
+  "batch_size": 16,
+  "max_length": 256,
+  "max_vram_budget_gb": 1.5,
+  "any_over_budget": false,
+  "files": [
+    {
+      "input": "data\\punctuated\\sample-1.txt",
+      "sentences": 50,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 50,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-1.txt",
+          "peak_allocated_gb": 0.753472,
+          "peak_reserved_gb": 0.919922,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-1.ordered.txt",
+        "mapping": "data\\ordered\\sample-1.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-2.txt",
+      "sentences": 49,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 49,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-2.txt",
+          "peak_allocated_gb": 0.76456,
+          "peak_reserved_gb": 0.982422,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-2.ordered.txt",
+        "mapping": "data\\ordered\\sample-2.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-3.txt",
+      "sentences": 47,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 47,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-3.txt",
+          "peak_allocated_gb": 0.766639,
+          "peak_reserved_gb": 1.048828,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-3.ordered.txt",
+        "mapping": "data\\ordered\\sample-3.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-4.txt",
+      "sentences": 50,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 50,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-4.txt",
+          "peak_allocated_gb": 0.758996,
+          "peak_reserved_gb": 1.048828,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-4.ordered.txt",
+        "mapping": "data\\ordered\\sample-4.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-5.txt",
+      "sentences": 52,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 52,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-5.txt",
+          "peak_allocated_gb": 0.761976,
+          "peak_reserved_gb": 1.050781,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-5.ordered.txt",
+        "mapping": "data\\ordered\\sample-5.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-6.txt",
+      "sentences": 48,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 48,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-6.txt",
+          "peak_allocated_gb": 0.748141,
+          "peak_reserved_gb": 1.050781,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-6.ordered.txt",
+        "mapping": "data\\ordered\\sample-6.mapping.tsv"
+      }
+    },
+    {
+      "input": "data\\punctuated\\sample-7.txt",
+      "sentences": 60,
+      "topics": 1,
+      "ordering": {
+        "method": "mbert_pairwise_borda",
+        "model": "bert-base-multilingual-cased",
+        "sentences": 60,
+        "notes": "Unsupervised pairwise scoring with multilingual BERT pair encodings and Borda aggregation; candidate order.",
+        "cuda_memory": {
+          "label": "sample-7.txt",
+          "peak_allocated_gb": 0.741477,
+          "peak_reserved_gb": 1.050781,
+          "budget_gb": 1.5,
+          "over_budget": false
+        }
+      },
+      "outputs": {
+        "ordered": "data\\ordered\\sample-7.ordered.txt",
+        "mapping": "data\\ordered\\sample-7.mapping.tsv"
+      }
+    }
+  ],
+  "cuda_peak_allocated_gb_overall": 0.741477,
+  "cuda_peak_reserved_gb_overall": 1.050781
+}
