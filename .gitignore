@@ -21,9 +21,6 @@ models/
 data/processed/*
 !data/processed/.gitkeep
 data/model_input/
-data/punctuated/
-data/ordered/
-data/final/
 outputs/
 reports/
 
